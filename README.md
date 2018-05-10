@@ -71,7 +71,7 @@ Here are the collected results from this repository and the original paper.
 |       My model ( reported by [@jasonbw](https://github.com/jasonwbw))|     60,000     |  128  |        1        |   87k (no aug)  | 70.7 | 79.8 |
 |       My model ( reported by [@chesterkuo](https://github.com/chesterkuo))|     60,000     |  128  |        8        |   87k (no aug)  | 70.8 | 80.1 |
 | Original Paper |     35,000     |  128 |        8        |   87k (no aug)  |  NA  | 77.0 |
-| Original Paper |     150,000    |  128 |        8        |   87k (no aug)  | 72.5 | 81.4 |
+| Original Paper |     150,000    |  128 |        8        |   87k (no aug)  | 73.6 | 82.7 |
 | Original Paper |     340,000    |  128 |        8        |    240k (aug)   | 76.2 | 84.6 |
 
 ## TODO's

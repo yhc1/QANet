@@ -46,6 +46,29 @@ python evaluate-v1.1.py ~/data/squad/dev-v1.1.json train/{model_name}/answer/ans
 
 The default directory for the tensorboard log file is `train/{model_name}/event`
 
+### Run in Docker container (optional)
+To build the Docker image (requires nvidia-docker), run
+
+```
+nvidia-docker build -t tensorflow/qanet .
+```
+
+Set volume mount paths and port mappings (for demo mode)
+
+```
+export QANETPATH={/path/to/cloned/QANet}
+export CONTAINERWORKDIR=/home/QANet
+export HOSTPORT=8080
+export CONTAINERPORT=8080
+```
+
+bash into the container
+```
+nvidia-docker run -v $QANETPATH:$CONTAINERWORKDIR -p $HOSTPORT:$CONTAINERPORT -it --rm tensorflow/qanet bash
+```
+
+Once inside the container, follow the commands provided above starting with downloading the SQuAD and Glove datasets.
+
 ### Pretrained Model
 Pretrained model weights are temporarily not available.
 

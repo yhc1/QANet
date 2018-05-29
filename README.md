@@ -1,5 +1,5 @@
 # QANet
-A Tensorflow implementation of Google's [QANet](https://openreview.net/pdf?id=B14TlG-RW) (previously Fast Reading Comprehension (FRC)) from [ICLR2018](https://openreview.net/forum?id=B14TlG-RW).
+A Tensorflow implementation of Google's [QANet](https://openreview.net/pdf?id=B14TlG-RW) (previously Fast Reading Comprehension (FRC)) from [ICLR2018](https://openreview.net/forum?id=B14TlG-RW). (Note: This is not an official implementation from the authors of the paper)
 
 I wrote a blog post about implementing QANet. Check out [here](https://medium.com/@minsangkim/implementing-question-answering-networks-with-cnns-5ae5f08e312b) for more information!
 
@@ -7,7 +7,7 @@ Training and preprocessing pipeline have been adopted from [R-Net by HKUST-KnowC
 
 Due to a memory issue, a single head dot-product attention is used as opposed to a 8 heads multi-head attention like in the original paper. The hidden size is also reduced to 96 from 128 due to usage of a GTX1080 compared to a P100 used in the paper. (8GB of GPU memory is insufficient. If you have a 12GB memory GPU please share your training results with us.)
 
-Currently, the best model reaches EM/F1 = 70.8/80.1 in 60k steps. Detailed results are listed below.
+Currently, the best model reaches EM/F1 = 70.8/80.1 in 60k steps (6~8 hours). Detailed results are listed below.
 
 ![Alt text](/../master/screenshots/figure.png?raw=true "Network Outline")
 

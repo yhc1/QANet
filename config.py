@@ -11,11 +11,11 @@ from main import train, test, demo
 
 flags = tf.flags
 
-home = os.path.expanduser("~")
-train_file = os.path.join(home, "data", "squad", "train-v1.1.json")
-dev_file = os.path.join(home, "data", "squad", "dev-v1.1.json")
-test_file = os.path.join(home, "data", "squad", "dev-v1.1.json")
-glove_word_file = os.path.join(home, "data", "glove", "glove.840B.300d.txt")
+home = os.getcwd()
+train_file = os.path.join(home, "datasets", "squad", "train-v1.1.json")
+dev_file = os.path.join(home, "datasets", "squad", "dev-v1.1.json")
+test_file = os.path.join(home, "datasets", "squad", "dev-v1.1.json")
+glove_word_file = os.path.join(home, "datasets", "glove", "glove.840B.300d.txt")
 
 train_dir = "train"
 model_name = "FRC"

@@ -26,7 +26,7 @@ def convert_idx(text, tokens):
     for token in tokens:
         current = text.find(token, current)
         if current < 0:
-            print("Token {} cannot be found".format(token))
+            print(f"Token {token} cannot be found")
             raise Exception()
         spans.append((current, current + len(token)))
         current += len(token)
@@ -34,7 +34,7 @@ def convert_idx(text, tokens):
 
 
 def process_file(filename, data_type, word_counter, char_counter):
-    print("Generating {} examples...".format(data_type))
+    print(f"Generating {data_type} examples...")
     examples = []
     eval_examples = {}
     total = 0
@@ -68,10 +68,12 @@ def process_file(filename, data_type, word_counter, char_counter):
                         answer_start = answer['answer_start']
                         answer_end = answer_start + len(answer_text)
                         answer_texts.append(answer_text)
-                        answer_span = []
-                        for idx, span in enumerate(spans):
-                            if not (answer_end <= span[0] or answer_start >= span[1]):
-                                answer_span.append(idx)
+                        answer_span = [
+                            idx
+                            for idx, span in enumerate(spans)
+                            if answer_end > span[0] and answer_start < span[1]
+                        ]
+
                         y1, y2 = answer_span[0], answer_span[-1]
                         y1s.append(y1)
                         y2s.append(y2)
@@ -81,33 +83,33 @@ def process_file(filename, data_type, word_counter, char_counter):
                     eval_examples[str(total)] = {
                         "context": context, "spans": spans, "answers": answer_texts, "uuid": qa["id"]}
         random.shuffle(examples)
-        print("{} questions in total".format(len(examples)))
+        print(f"{len(examples)} questions in total")
     return examples, eval_examples
 
 
 def get_embedding(counter, data_type, limit=-1, emb_file=None, size=None, vec_size=None):
-    print("Generating {} embedding...".format(data_type))
+    print(f"Generating {data_type} embedding...")
     embedding_dict = {}
     filtered_elements = [k for k, v in counter.items() if v > limit]
+    assert vec_size is not None
     if emb_file is not None:
         assert size is not None
-        assert vec_size is not None
         with open(emb_file, "r", encoding="utf-8") as fh:
             for line in tqdm(fh, total=size):
                 array = line.split()
-                word = "".join(array[0:-vec_size])
+                word = "".join(array[:-vec_size])
                 vector = list(map(float, array[-vec_size:]))
                 if word in counter and counter[word] > limit:
                     embedding_dict[word] = vector
-        print("{} / {} tokens have corresponding {} embedding vector".format(
-            len(embedding_dict), len(filtered_elements), data_type))
+        print(
+            f"{len(embedding_dict)} / {len(filtered_elements)} tokens have corresponding {data_type} embedding vector"
+        )
+
     else:
-        assert vec_size is not None
         for token in filtered_elements:
             embedding_dict[token] = [np.random.normal(
                 scale=0.1) for _ in range(vec_size)]
-        print("{} tokens have corresponding embedding vector".format(
-            len(filtered_elements)))
+        print(f"{len(filtered_elements)} tokens have corresponding embedding vector")
 
     NULL = "--NULL--"
     OOV = "--OOV--"
@@ -153,15 +155,17 @@ def convert_to_features(config, data, word2idx_dict, char2idx_dict):
     y2 = np.zeros([para_limit], dtype=np.float32)
 
     def _get_word(word):
-        for each in (word, word.lower(), word.capitalize(), word.upper()):
-            if each in word2idx_dict:
-                return word2idx_dict[each]
-        return 1
+        return next(
+            (
+                word2idx_dict[each]
+                for each in (word, word.lower(), word.capitalize(), word.upper())
+                if each in word2idx_dict
+            ),
+            1,
+        )
 
     def _get_char(char):
-        if char in char2idx_dict:
-            return char2idx_dict[char]
-        return 1
+        return char2idx_dict[char] if char in char2idx_dict else 1
 
     for i, token in enumerate(example["context_tokens"]):
         context_idxs[i] = _get_word(token)
@@ -215,15 +219,17 @@ def build_features(config, examples, data_type, out_file, word2idx_dict, char2id
         y2 = np.zeros([para_limit], dtype=np.float32)
 
         def _get_word(word):
-            for each in (word, word.lower(), word.capitalize(), word.upper()):
-                if each in word2idx_dict:
-                    return word2idx_dict[each]
-            return 1
+            return next(
+                (
+                    word2idx_dict[each]
+                    for each in (word, word.lower(), word.capitalize(), word.upper())
+                    if each in word2idx_dict
+                ),
+                1,
+            )
 
         def _get_char(char):
-            if char in char2idx_dict:
-                return char2idx_dict[char]
-            return 1
+            return char2idx_dict[char] if char in char2idx_dict else 1
 
         for i, token in enumerate(example["context_tokens"]):
             context_idxs[i] = _get_word(token)
@@ -264,7 +270,7 @@ def build_features(config, examples, data_type, out_file, word2idx_dict, char2id
 
 def save(filename, obj, message=None):
     if message is not None:
-        print("Saving {}...".format(message))
+        print(f"Saving {message}...")
         with open(filename, "w") as fh:
             json.dump(obj, fh)
 

@@ -33,7 +33,7 @@ class Model(object):
             self.q_len = tf.reduce_sum(tf.cast(self.q_mask, tf.int32), axis=1)
 
             if opt:
-                N, CL = config.batch_size if not self.demo else 1, config.char_limit
+                N, CL = 1 if self.demo else config.batch_size, config.char_limit
                 self.c_maxlen = tf.reduce_max(self.c_len)
                 self.q_maxlen = tf.reduce_max(self.q_len)
                 self.c = tf.slice(self.c, [0, 0], [N, self.c_maxlen])

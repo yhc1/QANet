@@ -91,8 +91,7 @@ def train(config):
                     for s in summ:
                         writer.add_summary(s, global_step)
                     writer.flush()
-                    filename = os.path.join(
-                        config.save_dir, "model_{}.ckpt".format(global_step))
+                    filename = os.path.join(config.save_dir, f"model_{global_step}.ckpt")
                     saver.save(sess, filename)
 
 
@@ -109,12 +108,28 @@ def evaluate_batch(model, num_batches, eval_file, sess, data_type, handle, str_h
     loss = np.mean(losses)
     metrics = evaluate(eval_file, answer_dict)
     metrics["loss"] = loss
-    loss_sum = tf.Summary(value=[tf.Summary.Value(
-        tag="{}/loss".format(data_type), simple_value=metrics["loss"]), ])
-    f1_sum = tf.Summary(value=[tf.Summary.Value(
-        tag="{}/f1".format(data_type), simple_value=metrics["f1"]), ])
-    em_sum = tf.Summary(value=[tf.Summary.Value(
-        tag="{}/em".format(data_type), simple_value=metrics["exact_match"]), ])
+    loss_sum = tf.Summary(
+        value=[
+            tf.Summary.Value(
+                tag=f"{data_type}/loss", simple_value=metrics["loss"]
+            )
+        ]
+    )
+
+    f1_sum = tf.Summary(
+        value=[
+            tf.Summary.Value(tag=f"{data_type}/f1", simple_value=metrics["f1"])
+        ]
+    )
+
+    em_sum = tf.Summary(
+        value=[
+            tf.Summary.Value(
+                tag=f"{data_type}/em", simple_value=metrics["exact_match"]
+            )
+        ]
+    )
+
     return metrics, [loss_sum, f1_sum, em_sum]
 
 
@@ -162,7 +177,7 @@ def test(config):
             losses = []
             answer_dict = {}
             remapped_dict = {}
-            for step in tqdm(range(total // config.batch_size + 1)):
+            for _ in tqdm(range(total // config.batch_size + 1)):
                 qa_id, loss, yp1, yp2 = sess.run(
                     [model.qa_id, model.loss, model.yp1, model.yp2])
                 answer_dict_, remapped_dict_ = convert_tokens(
@@ -174,5 +189,4 @@ def test(config):
             metrics = evaluate(eval_file, answer_dict)
             with open(config.answer_file, "w") as fh:
                 json.dump(remapped_dict, fh)
-            print("Exact Match: {}, F1: {}".format(
-                metrics['exact_match'], metrics['f1']))
+            print(f"Exact Match: {metrics['exact_match']}, F1: {metrics['f1']}")

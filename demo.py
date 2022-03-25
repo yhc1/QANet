@@ -23,21 +23,20 @@ response = ""
 @app.get("/")
 def home():
     with open('demo.html', 'r') as fl:
-        html = fl.read()
-        return html
+        return fl.read()
 
 @app.post('/answer')
 def answer():
     passage = bottle.request.json['passage']
     question = bottle.request.json['question']
-    print("received question: {}".format(question))
+    print(f"received question: {question}")
     # if not passage or not question:
     #     exit()
     global query, response
     query = (passage, question)
     while not response:
         sleep(0.1)
-    print("received response: {}".format(response))
+    print(f"received response: {response}")
     response_ = {"answer": response}
     response = []
     return response_

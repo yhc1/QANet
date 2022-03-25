@@ -63,8 +63,7 @@ def layer_norm(x, filters=None, epsilon=1e-6, scope=None, reuse=None):
             "layer_norm_scale", [filters], regularizer = regularizer, initializer=tf.ones_initializer())
         bias = tf.get_variable(
             "layer_norm_bias", [filters], regularizer = regularizer, initializer=tf.zeros_initializer())
-        result = layer_norm_compute_python(x, epsilon, scale, bias)
-        return result
+        return layer_norm_compute_python(x, epsilon, scale, bias)
 
 norm_fn = layer_norm#tf.contrib.layers.layer_norm #tf.contrib.layers.layer_norm or noam_norm
 
@@ -203,10 +202,7 @@ def conv(inputs, output_size, bias = None, activation = None, kernel_size = 1, n
                         bias_shape,
                         regularizer=regularizer,
                         initializer = tf.zeros_initializer())
-        if activation is not None:
-            return activation(outputs)
-        else:
-            return outputs
+        return activation(outputs) if activation is not None else outputs
 
 def mask_logits(inputs, mask, mask_value = -1e30):
     shapes = inputs.shape.as_list()
@@ -417,32 +413,33 @@ def dot(x, y):
     # Returns
         A tensor, dot product of `x` and `y`.
     """
-    if ndim(x) is not None and (ndim(x) > 2 or ndim(y) > 2):
-        x_shape = []
-        for i, s in zip(x.get_shape().as_list(), tf.unstack(tf.shape(x))):
-            if i is not None:
-                x_shape.append(i)
-            else:
-                x_shape.append(s)
-        x_shape = tuple(x_shape)
-        y_shape = []
-        for i, s in zip(y.get_shape().as_list(), tf.unstack(tf.shape(y))):
-            if i is not None:
-                y_shape.append(i)
-            else:
-                y_shape.append(s)
-        y_shape = tuple(y_shape)
-        y_permute_dim = list(range(ndim(y)))
-        y_permute_dim = [y_permute_dim.pop(-2)] + y_permute_dim
-        xt = tf.reshape(x, [-1, x_shape[-1]])
-        yt = tf.reshape(tf.transpose(y, perm=y_permute_dim), [y_shape[-2], -1])
-        return tf.reshape(tf.matmul(xt, yt),
-                          x_shape[:-1] + y_shape[:-2] + y_shape[-1:])
-    if isinstance(x, tf.SparseTensor):
-        out = tf.sparse_tensor_dense_matmul(x, y)
-    else:
-        out = tf.matmul(x, y)
-    return out
+    if ndim(x) is None or ndim(x) <= 2 and ndim(y) <= 2:
+        return (
+            tf.sparse_tensor_dense_matmul(x, y)
+            if isinstance(x, tf.SparseTensor)
+            else tf.matmul(x, y)
+        )
+
+    x_shape = []
+    for i, s in zip(x.get_shape().as_list(), tf.unstack(tf.shape(x))):
+        if i is not None:
+            x_shape.append(i)
+        else:
+            x_shape.append(s)
+    x_shape = tuple(x_shape)
+    y_shape = []
+    for i, s in zip(y.get_shape().as_list(), tf.unstack(tf.shape(y))):
+        if i is not None:
+            y_shape.append(i)
+        else:
+            y_shape.append(s)
+    y_shape = tuple(y_shape)
+    y_permute_dim = list(range(ndim(y)))
+    y_permute_dim = [y_permute_dim.pop(-2)] + y_permute_dim
+    xt = tf.reshape(x, [-1, x_shape[-1]])
+    yt = tf.reshape(tf.transpose(y, perm=y_permute_dim), [y_shape[-2], -1])
+    return tf.reshape(tf.matmul(xt, yt),
+                      x_shape[:-1] + y_shape[:-2] + y_shape[-1:])
 
 def batch_dot(x, y, axes=None):
     """Copy from keras==2.0.6
@@ -493,10 +490,7 @@ def batch_dot(x, y, axes=None):
             adj_y = None
         out = tf.matmul(x, y, adjoint_a=adj_x, adjoint_b=adj_y)
     if diff:
-        if x_ndim > y_ndim:
-            idx = x_ndim + y_ndim - 3
-        else:
-            idx = x_ndim - 1
+        idx = x_ndim + y_ndim - 3 if x_ndim > y_ndim else x_ndim - 1
         out = tf.squeeze(out, list(range(idx, idx + diff)))
     if ndim(out) == 1:
         out = tf.expand_dims(out, 1)
@@ -563,8 +557,7 @@ def flatten(tensor, keep):
     start = len(fixed_shape) - keep
     left = reduce(mul, [fixed_shape[i] or tf.shape(tensor)[i] for i in range(start)])
     out_shape = [left] + [fixed_shape[i] or tf.shape(tensor)[i] for i in range(start, len(fixed_shape))]
-    flat = tf.reshape(tensor, out_shape)
-    return flat
+    return tf.reshape(tensor, out_shape)
 
 def reconstruct(tensor, ref, keep):
     ref_shape = ref.get_shape().as_list()
@@ -576,8 +569,7 @@ def reconstruct(tensor, ref, keep):
     # pre_shape = [tf.shape(ref)[i] for i in range(len(ref.get_shape().as_list()[:-keep]))]
     # keep_shape = tensor.get_shape().as_list()[-keep:]
     target_shape = pre_shape + keep_shape
-    out = tf.reshape(tensor, target_shape)
-    return out
+    return tf.reshape(tensor, target_shape)
 
 def _linear(args,
             output_size,
@@ -586,7 +578,7 @@ def _linear(args,
             scope = None,
             kernel_initializer=initializer(),
             reuse = None):
-  """Linear map: sum_i(args[i] * W[i]), where W[i] is a variable.
+    """Linear map: sum_i(args[i] * W[i]), where W[i] is a variable.
   Args:
     args: a 2D Tensor or a list of 2D, batch x n, Tensors.
     output_size: int, second dimension of W[i].
@@ -600,45 +592,45 @@ def _linear(args,
   Raises:
     ValueError: if some of the arguments has unspecified or wrong shape.
   """
-  if args is None or (nest.is_sequence(args) and not args):
-    raise ValueError("`args` must be specified")
-  if not nest.is_sequence(args):
-    args = [args]
-  # Calculate the total size of arguments on dimension 1.
-  total_arg_size = 0
-  shapes = [a.get_shape() for a in args]
-  for shape in shapes:
-    if shape.ndims != 2:
-      raise ValueError("linear is expecting 2D arguments: %s" % shapes)
-    if shape[1].value is None:
-      raise ValueError("linear expects shape[1] to be provided for shape %s, "
-                       "but saw %s" % (shape, shape[1]))
-    else:
-      total_arg_size += shape[1].value
+    if args is None or (nest.is_sequence(args) and not args):
+      raise ValueError("`args` must be specified")
+    if not nest.is_sequence(args):
+      args = [args]
+    # Calculate the total size of arguments on dimension 1.
+    total_arg_size = 0
+    shapes = [a.get_shape() for a in args]
+    for shape in shapes:
+        if shape.ndims != 2:
+            raise ValueError(f"linear is expecting 2D arguments: {shapes}")
+        if shape[1].value is None:
+          raise ValueError("linear expects shape[1] to be provided for shape %s, "
+                           "but saw %s" % (shape, shape[1]))
+        else:
+          total_arg_size += shape[1].value
 
-  dtype = [a.dtype for a in args][0]
+    dtype = [a.dtype for a in args][0]
 
-  # Now the computation.
-  with tf.variable_scope(scope, reuse = reuse) as outer_scope:
-    weights = tf.get_variable(
-        "linear_kernel", [total_arg_size, output_size],
-        dtype=dtype,
-        regularizer=regularizer,
-        initializer=kernel_initializer)
-    if len(args) == 1:
-      res = math_ops.matmul(args[0], weights)
-    else:
-      res = math_ops.matmul(array_ops.concat(args, 1), weights)
-    if not bias:
-      return res
-    with tf.variable_scope(outer_scope) as inner_scope:
-      inner_scope.set_partitioner(None)
-      biases = tf.get_variable(
-          "linear_bias", [output_size],
+    # Now the computation.
+    with tf.variable_scope(scope, reuse = reuse) as outer_scope:
+      weights = tf.get_variable(
+          "linear_kernel", [total_arg_size, output_size],
           dtype=dtype,
           regularizer=regularizer,
-          initializer=bias_initializer)
-    return nn_ops.bias_add(res, biases)
+          initializer=kernel_initializer)
+      if len(args) == 1:
+        res = math_ops.matmul(args[0], weights)
+      else:
+        res = math_ops.matmul(array_ops.concat(args, 1), weights)
+      if not bias:
+        return res
+      with tf.variable_scope(outer_scope) as inner_scope:
+        inner_scope.set_partitioner(None)
+        biases = tf.get_variable(
+            "linear_bias", [output_size],
+            dtype=dtype,
+            regularizer=regularizer,
+            initializer=bias_initializer)
+      return nn_ops.bias_add(res, biases)
 
 def total_params():
     total_parameters = 0
@@ -648,4 +640,4 @@ def total_params():
         for dim in shape:
             variable_parametes *= dim.value
         total_parameters += variable_parametes
-    print("Total number of trainable parameters: {}".format(total_parameters))
+    print(f"Total number of trainable parameters: {total_parameters}")

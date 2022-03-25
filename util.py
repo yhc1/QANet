@@ -66,9 +66,8 @@ def get_batch_dataset(record_file, parser, config):
 
 def get_dataset(record_file, parser, config):
     num_threads = tf.constant(config.num_threads, dtype=tf.int32)
-    dataset = tf.data.TFRecordDataset(record_file).map(
+    return tf.data.TFRecordDataset(record_file).map(
         parser, num_parallel_calls=num_threads).repeat().batch(config.batch_size)
-    return dataset
 
 
 def convert_tokens(eval_file, qa_id, pp1, pp2):
@@ -127,8 +126,7 @@ def f1_score(prediction, ground_truth):
         return 0
     precision = 1.0 * num_same / len(prediction_tokens)
     recall = 1.0 * num_same / len(ground_truth_tokens)
-    f1 = (2 * precision * recall) / (precision + recall)
-    return f1
+    return (2 * precision * recall) / (precision + recall)
 
 
 def exact_match_score(prediction, ground_truth):
